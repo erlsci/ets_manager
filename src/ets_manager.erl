@@ -22,21 +22,24 @@
 %% Record Definitions
 %% ------------------------------------------------------------------
 
-%% @type state() = Record :: #state{ opts = term()
-%%                                 }.
-
--record(state, {opts}).
+-record(state, {opts::term()}).
+-type state()::#state{}.
 
 %% ------------------------------------------------------------------
 %% API Function Definitions
 %% ------------------------------------------------------------------
 
+-spec start_link () -> {ok, pid()} | ignore | {error, {already_started, pid()} | term()}.
 start_link() ->
     gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
+-spec give_me (ets:tid())
+  -> {ok, ets:tid()} | {error, cant_give_away} | {error, already_own_table}.
 give_me(Name) ->
     gen_server:call(?MODULE, {give_me, Name}).
 
+-spec give_me (ets:tid(), [term()])
+  -> {ok, ets:tid()} | {error, cant_give_away} | {error, already_own_table}.
 give_me(Name, Opts) ->
     gen_server:call(?MODULE, {give_me, Name, Opts}).
 
@@ -51,11 +54,13 @@ give_me(Name, Opts) ->
 %%          ignore |
 %%          {stop, Reason}
 %%----------------------------------------------------------------------
+-spec init (term()) -> {ok, state()}.
 init([]) ->
     Opts = [set, named_table, protected, {keypos,1}, {heir,self(),[]},
             {write_concurrency,false}, {read_concurrency,false}],
     {ok, #state{opts=Opts}}.
 
+-spec handle_call(term(), {pid(), term()}, State::state()) -> {reply, term(), State::state()}.
 handle_call({give_me, Name}, {Pid, _Tag}, State) ->
     Return = give_me(Name, Pid, State),
     {reply, Return, State};
@@ -66,15 +71,19 @@ handle_call(_Request, _From, State) ->
     {reply, ok, State}.
 
 %% receive message from dead process. Note returned table.
+-spec handle_cast(term(), State::state()) -> {noreply, State::state()}.
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
+-spec handle_info(timeout() | term(), State::state()) -> {noreply, State::state()}.
 handle_info(_Info, State) ->
     {noreply, State}.
 
+-spec terminate (term(), term()) -> ok.
 terminate(_Reason, _State) ->
     ok.
 
+-spec code_change (term() | {down, term()}, State::state(), term()) -> {ok, State::state()}.
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
@@ -93,6 +102,8 @@ code_change(_OldVsn, State, _Extra) ->
 give_me(Name, Pid, State) ->
     give_me(Name, [], Pid, State).
 
+-spec give_me (atom(), [term()], pid(), state())
+  -> {ok, ets:tid()} | {error, cant_give_away} | {error, already_own_table}.
 give_me(Name, Opts, Pid, State) ->
     Me = self(),
     case ets:info(Name) of
@@ -116,7 +127,8 @@ give_me(Name, Opts, Pid, State) ->
 -ifdef(TEST).
 
 -include_lib("eunit/include/eunit.hrl").
-
+-spec test () -> term().
+-spec give_me_test () -> none().
 give_me_test() ->
     Name = foo,
     Opts = [set, named_table, protected, {keypos,1}, {heir,self(),[]},
