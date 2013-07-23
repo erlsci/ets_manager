@@ -91,18 +91,13 @@ code_change(_OldVsn, State, _Extra) ->
 %% Internal Function Definitions
 %% ------------------------------------------------------------------
 
-%% @spec (Name, Pid, State) -> { ok, Tab } | {error, Reason }
-%%        Name = atom()
-%%        State = state()
-%%        Pid = pid()
-%%        Tab = ets:tab()
-%%        Reason = atom()
 %% @doc Create or return an ets table for use. It will make the ets_manager
 %% a heir on the table so that on failure it is returned to it.
+-spec give_me (ets:tid(), pid(), state()) -> {ok, ets:tid()} | {error, term()}.
 give_me(Name, Pid, State) ->
     give_me(Name, [], Pid, State).
 
--spec give_me (atom(), [term()], pid(), state())
+-spec give_me (ets:tid(), [term()], pid(), state())
   -> {ok, ets:tid()} | {error, already_own_table}.
 give_me(Name, Opts, Pid, State) ->
     Me = self(),
