@@ -55,7 +55,7 @@ give_me(Name, Opts) ->
 %%          {stop, Reason}
 %%----------------------------------------------------------------------
 -spec init (term()) -> {ok, state()}.
-init([]) ->
+init(_) ->
     Opts = [set, named_table, protected, {keypos,1}, {heir,self(),[]},
             {write_concurrency,false}, {read_concurrency,false}],
     {ok, #state{opts=Opts}}.
@@ -103,21 +103,17 @@ give_me(Name, Pid, State) ->
     give_me(Name, [], Pid, State).
 
 -spec give_me (atom(), [term()], pid(), state())
-  -> {ok, ets:tid()} | {error, cant_give_away} | {error, already_own_table}.
+  -> {ok, ets:tid()} | {error, already_own_table}.
 give_me(Name, Opts, Pid, State) ->
     Me = self(),
     case ets:info(Name) of
         undefined -> Tid = ets:new(Name, State#state.opts ++ Opts),
-                     case ets:give_away(Tid, Pid, new_table) of
-                         true -> {ok, Tid};
-                         false -> {error, cant_give_away}
-                     end;
+                     true = ets:give_away(Tid, Pid, new_table),
+										 {ok, Tid};
         _Found -> case ets:info(Name, owner) of
                       Pid -> {error, already_own_table};
-                      Me  -> case ets:give_away(Name, Pid, reissued) of
-                                 true -> {ok, Name}; %% Name =:= Tid
-                                 false -> {error, cant_give_away}
-                             end
+                      Me  -> true = ets:give_away(Name, Pid, reissued),
+                             {ok, Name} %% Name =:= Tid
                   end
     end.
 
