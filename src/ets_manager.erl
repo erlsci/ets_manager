@@ -33,13 +33,13 @@
 start_link() ->
     gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
--spec give_me (ets:tid())
-  -> {ok, ets:tid()} | {error, cant_give_away} | {error, already_own_table}.
+-spec give_me (Name::ets:tab())
+  -> {ok, ets:tid()} | {error, already_own_table}.
 give_me(Name) ->
     gen_server:call(?MODULE, {give_me, Name}).
 
--spec give_me (ets:tid(), [term()])
-  -> {ok, ets:tid()} | {error, cant_give_away} | {error, already_own_table}.
+-spec give_me (Name::ets:tab(), Opts::[term()])
+  -> {ok, ets:tid()} | {error, already_own_table}.
 give_me(Name, Opts) ->
     gen_server:call(?MODULE, {give_me, Name, Opts}).
 
@@ -93,11 +93,11 @@ code_change(_OldVsn, State, _Extra) ->
 
 %% @doc Create or return an ets table for use. It will make the ets_manager
 %% a heir on the table so that on failure it is returned to it.
--spec give_me (ets:tid(), pid(), state()) -> {ok, ets:tid()} | {error, term()}.
+-spec give_me (Name::ets:tab(), pid(), state()) -> {ok, ets:tid()} | {error, term()}.
 give_me(Name, Pid, State) ->
     give_me(Name, [], Pid, State).
 
--spec give_me (ets:tid(), [term()], pid(), state())
+-spec give_me (Name::ets:tab(), [term()], pid(), state())
   -> {ok, ets:tid()} | {error, already_own_table}.
 give_me(Name, Opts, Pid, State) ->
     Me = self(),
