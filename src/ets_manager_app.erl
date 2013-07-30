@@ -9,7 +9,7 @@
 %% Application callbacks
 %% ===================================================================
 
--spec start(atom(), application:restart_type()) -> {error, term()} | {ok, pid()}.
+-spec start(atom(), permanent | transient | temporary) -> {error, term()} | {ok, pid()}.
 start(_StartType, _StartArgs) ->
     ets_manager_sup:start_link().
 
