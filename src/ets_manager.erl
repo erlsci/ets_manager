@@ -118,8 +118,8 @@ give_me(Name, Opts, Pid, State) ->
 -ifdef(TEST).
 
 -include_lib("eunit/include/eunit.hrl").
--spec test () -> term().
--spec give_me_test () -> none().
+
+-spec give_me_test() -> none().
 give_me_test() ->
     Name = foo,
     Opts = [set, named_table, protected, {keypos,1}, {heir,self(),[]},
@@ -158,4 +158,5 @@ reissue_check(Name) ->
         end
     end.
 
--endif.
+-spec test () -> term().
+-endif. %% TEST
