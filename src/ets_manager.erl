@@ -102,14 +102,17 @@ give_me(Name, Pid, State) ->
 give_me(Name, Opts, Pid, State) ->
     Me = self(),
     case ets:info(Name) of
-        undefined -> Tid = ets:new(Name, State#state.opts ++ Opts),
-                     true = ets:give_away(Tid, Pid, new_table),
-										 {ok, Tid};
-        _Found -> case ets:info(Name, owner) of
-                      Pid -> {error, already_own_table};
-                      Me  -> true = ets:give_away(Name, Pid, reissued),
-                             {ok, Name} %% Name =:= Tid
-                  end
+        undefined ->
+            Tid = ets:new(Name, State#state.opts ++ Opts),
+            true = ets:give_away(Tid, Pid, new_table),
+            {ok, Tid};
+        _Found ->
+            case ets:info(Name, owner) of
+                Pid -> {error, already_own_table};
+                Me  ->
+                    true = ets:give_away(Name, Pid, reissued),
+                    {ok, Name} %% Name =:= Tid
+                end
     end.
 
 %% ===================================================================
