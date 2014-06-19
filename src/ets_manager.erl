@@ -106,7 +106,7 @@ give_me(Name, Opts, Pid, State) ->
             Tid = ets:new(Name, State#state.opts ++ Opts),
             true = ets:give_away(Tid, Pid, new_table),
             {ok, Tid};
-        _Found ->
+        Found when is_list(Found) ->
             case ets:info(Name, owner) of
                 Pid -> {error, already_own_table};
                 Me  ->
