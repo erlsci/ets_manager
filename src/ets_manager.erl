@@ -93,12 +93,13 @@ code_change(_OldVsn, State, _Extra) ->
 
 %% @doc Create or return an ets table for use. It will make the ets_manager
 %% a heir on the table so that on failure it is returned to it.
--spec give_me (Name::ets:tab(), pid(), state()) -> {ok, ets:tid()} | {error, term()}.
+-spec give_me (Name::ets:tab(), pid(), state()) ->
+    {ok, ets:tid()} | {error, term()}.
 give_me(Name, Pid, State) ->
     give_me(Name, [], Pid, State).
 
--spec give_me (Name::ets:tab(), [term()], pid(), state())
-  -> {ok, ets:tid()} | {error, already_own_table}.
+-spec give_me (Name::ets:tab(), [term()], pid(), state()) ->
+    {ok, ets:tab()} | {error, already_own_table}.
 give_me(Name, Opts, Pid, State) ->
     Me = self(),
     case ets:info(Name) of
