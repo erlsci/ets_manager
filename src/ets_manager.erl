@@ -9,21 +9,26 @@
 %% API Function Exports
 %% ------------------------------------------------------------------
 
--export([start_link/0, give_me/1, give_me/2]).
+-export([start_link/0,
+        create_or_return/1, create_or_return/2,
+        create_or_return/3, create_or_return/4]).
 
 %% ------------------------------------------------------------------
 %% gen_server Function Exports
 %% ------------------------------------------------------------------
 
--export([init/1, handle_call/3, handle_cast/2, handle_info/2,
-         terminate/2, code_change/3]).
+-export([init/1,
+         handle_call/3,
+         handle_cast/2,
+         handle_info/2,
+         terminate/2,
+         code_change/3]).
 
 %% ------------------------------------------------------------------
 %% Record Definitions
 %% ------------------------------------------------------------------
 
--record(state, {opts::term()}).
--type state()::#state{}.
+-include_lib("ets_manager/include/state.hrl").
 
 %% ------------------------------------------------------------------
 %% API Function Definitions
@@ -33,15 +38,15 @@
 start_link() ->
     gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
--spec give_me (Name::ets:tab())
+-spec create_or_return (Name::ets:tab())
   -> {ok, ets:tid()} | {error, already_own_table}.
-give_me(Name) ->
-    gen_server:call(?MODULE, {give_me, Name}).
+create_or_return(Name) ->
+    gen_server:call(?MODULE, {create_or_return, Name}).
 
--spec give_me (Name::ets:tab(), Opts::[term()])
+-spec create_or_return (Name::ets:tab(), Opts::[term()])
   -> {ok, ets:tid()} | {error, already_own_table}.
-give_me(Name, Opts) ->
-    gen_server:call(?MODULE, {give_me, Name, Opts}).
+create_or_return(Name, Opts) ->
+    gen_server:call(?MODULE, {create_or_return, Name, Opts}).
 
 %% ------------------------------------------------------------------
 %% gen_server Function Definitions
@@ -61,11 +66,11 @@ init(_) ->
     {ok, #state{opts=Opts}}.
 
 -spec handle_call(term(), {pid(), term()}, State::state()) -> {reply, term(), State::state()}.
-handle_call({give_me, Name}, {Pid, _Tag}, State) ->
-    Return = give_me(Name, Pid, State),
+handle_call({create_or_return, Name}, {Pid, _Tag}, State) ->
+    Return = create_or_return(Name, Pid, State),
     {reply, Return, State};
-handle_call({give_me, Name, Opts}, {Pid, _Tag}, State) ->
-    Return = give_me(Name, Opts, Pid, State),
+handle_call({create_or_return, Name, Opts}, {Pid, _Tag}, State) ->
+    Return = create_or_return(Name, Opts, Pid, State),
     {reply, Return, State};
 handle_call(_Request, _From, State) ->
     {reply, ok, State}.
@@ -88,19 +93,19 @@ code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
 %% ------------------------------------------------------------------
-%% Internal Function Definitions
+%% Utility Function Definitions
 %% ------------------------------------------------------------------
 
 %% @doc Create or return an ets table for use. It will make the ets_manager
 %% a heir on the table so that on failure it is returned to it.
--spec give_me (Name::ets:tab(), pid(), state()) ->
+-spec create_or_return (Name::ets:tab(), pid(), state()) ->
     {ok, ets:tid()} | {error, term()}.
-give_me(Name, Pid, State) ->
-    give_me(Name, [], Pid, State).
+create_or_return(Name, Pid, State) ->
+    create_or_return(Name, [], Pid, State).
 
--spec give_me (Name::ets:tab(), [term()], pid(), state()) ->
+-spec create_or_return (Name::ets:tab(), [term()], pid(), state()) ->
     {ok, ets:tab()} | {error, already_own_table}.
-give_me(Name, Opts, Pid, State) ->
+create_or_return(Name, Opts, Pid, State) ->
     Me = self(),
     case ets:info(Name) of
         undefined ->
@@ -115,52 +120,3 @@ give_me(Name, Opts, Pid, State) ->
                     {ok, Name} %% Name =:= Tid
                 end
     end.
-
-%% ===================================================================
-%% EUnit tests
-%% ===================================================================
--ifdef(TEST).
-
--include_lib("eunit/include/eunit.hrl").
-
--spec give_me_test() -> none().
-give_me_test() ->
-    Name = foo,
-    Opts = [set, named_table, protected, {keypos,1}, {heir,self(),[]},
-            {write_concurrency,false}, {read_concurrency,false}],
-    State = #state{opts=Opts},
-    P = spawn( new_check(Name) ),
-    {ok,Name} = give_me(Name, P, State),
-    %%kill and see if reassigns.
-    exit(P, zeds_dead_baby),
-    return_check(Name, P),
-    Z = spawn( reissue_check(Name) ),
-    {ok,Name} = give_me(Name, Z, State).
-
-new_check(Name) ->
-    fun() ->
-        receive
-            {'ETS-TRANSFER', Tid, _Pid, new_table} ->
-                ?assertEqual( Name, Tid );
-            Error -> ?assertEqual(ok,Error)
-        end
-    end.
-
-return_check(Name, Pid) ->
-    receive
-        {'ETS-TRANSFER', Tid, Pid, []} ->
-            ?assertEqual( Name, Tid );
-        Error -> ?assertEqual(ok, Error)
-    end.
-
-reissue_check(Name) ->
-    fun() ->
-        receive
-            {'ETS-TRANSFER', Tid, _Pid, reissued} ->
-                ?assertEqual( Name, Tid );
-            Error -> ?assertEqual(ok,Error)
-        end
-    end.
-
--spec test () -> term().
--endif. %% TEST
