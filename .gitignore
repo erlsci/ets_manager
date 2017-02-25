@@ -5,3 +5,5 @@ deps
 *.plt
 ebin
 doc
+_build
+rebar.lock
