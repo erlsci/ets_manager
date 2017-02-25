@@ -17,7 +17,7 @@ Add the library to your rebar config
   deps,
   [
    {ets_manager, {git, "https://github.com/erlsci/ets_manager.git",
-     {tag, "0.4.0"}}},
+     {tag, "v0.4.0"}}},
    ....
   ]
 }.
