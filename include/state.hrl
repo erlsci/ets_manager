@@ -1,0 +1,2 @@
+-record(state, {opts::term()}).
+-type state()::#state{}.
