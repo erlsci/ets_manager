@@ -16,18 +16,27 @@ Add the library to your rebar config
 {
   deps,
   [
-   {ets_manager, "0.1.*", {git, "git://github.com/dipthegeezer/ets_manager.git", "HEAD"}},
+   {ets_manager, {git, "https://github.com/erlsci/ets_manager.git",
+     {tag, "0.4.0"}}},
    ....
   ]
 }.
 
 ```
-Then just use rebar to get the deps and use in your code.
+Then just use `rebar3` to automatically download and compile as part
+or your project
+
+```bash
+$ rebar3 compile
 
 ```
-./rebar get-deps
 
-```
+
+## Breaking Changes
+
+Note that in v0.4.0, the function `give_me` was renamed to `create_or_return`.
+If you need the old name, be sure to use the v0.3.0 release.
+
 
 ## Usage
 
@@ -38,7 +47,7 @@ application:start(ets_manager).
 P = spawn(
         fun() ->
             Name = foo,
-            {ok, Name} = ets_manager:give_me(Name),
+            {ok, Name} = ets_manager:create_or_return(Name),
             receive
                 {'ETS-TRANSFER', Tid, _Pid, new_table} -> some_function(Tid)
             end
@@ -50,7 +59,7 @@ exit(P, zeds_dead_baby),
 Z = spawn(
         fun() ->
            Name = foo,
-           {ok, Name} = ets_manager:give_me(Name),
+           {ok, Name} = ets_manager:create_or_return(Name),
            receive
                {'ETS-TRANSFER', Tid, _Pid, reissued} -> some_function(Tid)
            end
